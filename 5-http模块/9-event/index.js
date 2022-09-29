@@ -39,3 +39,4 @@ function httpget(cb) {
             cb(data)
         })
     })
+}
