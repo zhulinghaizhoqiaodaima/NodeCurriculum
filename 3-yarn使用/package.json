@@ -1,0 +1,11 @@
+{
+  "name": "zhulinhai",
+  "version": "1.0.0",
+  "description": "test",
+  "main": "index.js",
+  "author": "zhulinhai",
+  "license": "MIT",
+  "dependencies": {
+    "md5": "1"
+  }
+}
