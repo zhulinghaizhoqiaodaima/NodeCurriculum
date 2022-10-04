@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="./css/home.css">
+</head>
+<body>
+    <h1>Home页面</h1>
+    <main>
+        
+        <div class="title">
+            <p>欢迎回来</p>
+        </div>
+        <ul class="list"></ul>
+        
+    </main>
+    <script>
+        let oul = document.querySelector('.list')
+        fetch('/home/list').then(res=>res.json()).then(res=>{
+            render(res.list);
+        })
+
+        function render(data) {
+            let list = data.map(item=>`<li>${item}</li>`)
+            // console.log(list.join(""));
+            oul.innerHTML = list.join('');
+        }
+        
+    </script>
+</body>
+</html>

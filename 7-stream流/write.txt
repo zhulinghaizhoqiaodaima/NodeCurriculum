@@ -1,0 +1,235 @@
+浏览器 & 网络
+1.浏览器输入url之后获取到页面的整个流程是怎样的
+首先浏览器会依次查看自身的缓存，系统的缓存以及路由器（网络层）的缓存当中是否有当前url的数据，如果有则使用缓存的数据。
+如果缓存里面都没有，那么就会发送http请求，在这个过程中会经历DNS域名解析的环节，DNS会根据你输入的域名来查找到最适合的IP地，从而去访问服务器。
+找到服务器之后，开始建立TCP连接，这个过程中会经历三次握手的过程，当握手成功之后，浏览器开始像服务器发送HTTP请求报文，服务器返回给浏览器响应报文。
+浏览器接收到响应报文之后，进行浏览器页面的渲染，生成DOM树，CSS树，最终合成生成页面
+数据传输完成后，进行四次挥手，表示这一次的TCP连接完成。
+2. 缓存
+1. DNS缓存
+用户访问baidu.com的时候，首先去询问浏览器，浏览器则会去询问操作系统(windows)，操作系统去询问服务商，服务商会把baidu.com的IP地址返回给操作系统，操作系统会对其进行缓存，然后浏览器也知道了IP地址，并对其进行缓存。
+2. http的缓存
+百度服务器返回给你一个index.html,其余的文件则通过CDN进行返回，在返回的响应头上面会加上cache-control 的响应头。告诉浏览器缓存的最大有效时间。
+一般我们将cache-control这种缓存叫做强缓存。cache-control有三个关键字段分别是
+public表示的是公开内容，因此代表着中间的所有的代理都可以对文件进行缓存。
+private 表示只有服务器和使用的浏览器可以进去缓存
+max-age 表示缓存的有效时长
+must-revalidate 表示对于过期的缓存进行重新校验
+重新校验 又叫做 内容协商或者弱缓存。内容协商的主要工作就是，协商缓存过期之后还能否继续重用，判断的依据就是响应头里面的etag字段。内容协商分为以下几个步骤：
+当缓存过期之后，会发送一个协商请求，与一般请求不同的是协商请求会带有上一次响应的etag字段信息。
+服务器通过etag和上次请求进行对比，如果发现etag没有变，则表示可以沿用之前的缓存，同时返回给浏览器状态304，并且返回一个空的响应内容。浏览器通过状态码知道了可以沿用上次的缓存，于是去沿用上次的内容。
+当服务器匹配不上etag，就表示不能沿用上次的缓存，于是返回状态码200以及最新的内容给到浏览器。
+禁止缓存
+服务器端： cache-control: max-age=0,must-revalidate 等价于 cache-control: no-cache，no-store
+浏览器端： 
+每次发送请求的时候在url后面添加一个时间戳，这样就会是一新的请求不会走缓存。
+在请求头header上面添加cache-control
+3. 什么是DNS
+DNS指的是域名解析系统，主要功能就是将域名解析成电脑可以理解的IP地址，解析的过程就叫做DNS域名解析。域名解析系统不是一个给人用的应用，而是给应用用的应用，他提供的服务是域名到IP地址的转换。
+采用分层化的命名方式，为了解决重名的问题。
+采用分布式的数据库来解析
+采用UDP的传输方式，这样不需要频繁的握手请求。
+Internet 的传输层有两个主要协议，互为补充。无连接的是 UDP，它除了给应用程序发送数据包功能并允许它们在所需的层次上架构自己的协议之外，几乎没有做什么特别的事情。面向连接的是 TCP，该协议几乎做了所有的事情
+分层化的命名
+根域名（全球一共有十几个.）
+顶级域名（.com, .edu, .cn）
+二级域名(.com.cn , .edu.cn)
+通过分层化的命名，将域名拆成一棵倒过来的树，命名的管理就是域名管理了自己下面的子域名
+2. 域名到IP地址的转换
+分布式解决域名的解析。
+DNS域名解析的过程，首先会查询本地是否有已经解析过的记录，也就是DNS的缓存
+客户端发出一次查询请求
+首先询问浏览器是否有缓存，有就直接返回
+浏览器发现找不到就会去操作系统的host文件去查询是否有，有就直接返回
+操作系统找不到就会去询问本地DNS服务器缓存，有就直接返回
+本地DNS服务器缓存中没有，就会去询问本地DNS服务器
+上述的过程，叫做 递归查询。 这种查询有个问题，就是本地DNS服务器得存储大量得映射关系才能满足主机得需求，很明显这不太现实也不合理。于是本地DNS服务器在查询不到得情况下就会进行 迭代查询。具体操作是如下情况：
+本地DNS服务器找不到之后，首先会去询问根域名服务器
+如果根域名服务器知道结果就会返回。如果不知道，他会返回一个锦囊（其实就是告诉本地应该去哪个顶级域名找找看）给到本地DNS服务器。
+本地DNS服务器在得到锦囊之后呢，就会顺着线索去询问该顶级域名服务器。
+同理如果顶级域名不清楚，那么会返回权威域名服务器得地址给到本地DNS服务器，最终找到对应得IP地址。
+4. 讲一下三次握手
+建立TCP连接时，服务器和客户端会经历三次握手
+浏览器向服务器发送TCP数据： SYN(seq=x)
+服务器向浏览器发送TCP数据： ACK(seq = x+1),SYN(seq=y)
+浏览器向服务器发送TCP数据： ACK(seq = y+1)
+三次握手得目的，是为了确定服务端和客户端双方都具备收/发消息得能力。
+5. 讲一下四次挥手
+在关闭TCP连接时，服务器和客户端会经历四次挥手
+浏览器向服务器发送TCP数据：FIN(req=x)
+服务器向浏览器发送TCP数据： ACK(req=x+1)
+服务器向浏览器发送TCP数据: FIN(req=y)
+浏览器向服务器发送TCP数据： ACK(req=y+1)
+第二和第三步分开执行的原因： 在这两步之间很可能还有数据在发送，所以不能提前发送FIN
+6. HTTP与HTTPS有什么区别
+HTTPS = HTTP + SSL/TLS(安全层)
+HTTP是明文传输的，不安全；HTTPS是加密传输，更安全
+HTTP是80端口，HTTPS是443端口
+HTTP较快，HTTPS较慢
+HTTPS需要证书
+HTTPS协议之所以安全，是因为HTTPS协议对传输的数据进行加密，而加密过程是由非对称加密实现的。然而，HTTPS在内容传输的加密过程中使用对称加密，而非对称加密只在证书验证阶段发挥作用。
+https加密过程 
+
+7.HTTP1.1与HTTP2.0有哪些区别
+HTTP1.0：
+浏览器与服务器只保持短暂的连接，浏览器的每次请求都需要与服务器建立一个TCP连接
+HTTP1.1：
+引入了持久连接，即TCP连接默认不关闭，可以被多个请求复用
+在同一个TCP连接里面，客户端可以同时发送多个请求
+虽然允许复用TCP连接，但是同一个TCP连接里面，所有的数据通信是按次序进行的，服务器只有处理完一个请求，才会接着处理下一个请求。如果前面的处理特别慢，后面就会有许多请求排队等着
+新增了一些请求方法
+新增了一些请求头和响应头
+HTTP2.0：
+采用二进制格式而非字符串格式
+完全多路复用，而非有序并阻塞的、只需一个连接即可实现并行
+使用报头压缩，降低开销,提升了性能
+HTTP/2 通过多路复用、二进制流、Header 压缩等等技术，极大地提高了性能,http2会慢慢取代HTTP/1.x 而被广泛采用
+8.Session、Cookie、LocalStorage、SessionStorage 的区别
+Cookie VS LocalStorage
+cookie会被发送到服务器，localstorage不会
+cookie最大只有4k,localstorage 甚至可以达到10M
+LocalStorage VS SessionStorage 
+localStorage 一般不会自动过期
+sessionStorage 在关闭会话的时候过期
+Cookie VS Session
+cookie存在浏览器文件里面，session存在服务器里面
+session是基于cookie实现的，具体做法就是将sessionId存在cookie里面
+9.浏览器的渲染原理
+HTML 的解析过程如下：
+下载 HTML
+解析 HTML 构建一个 DOM 树
+下载 css
+解析 css 构建一个 CSS 树
+在解析 JavaScript 过程中会阻塞 HTML 的解析
+下载/执行 js 为何会阻塞 HTML 的解析
+执行 JS 的情况： 在执行 JS 的时候可能会修改 DOM 树
+下载 JS 的情况： 浏览器只有看到了 JS 请求的时候才会去下载 JS，下载之后就会去执行 JS
+async 和 defer 的区别
+defer 会在 domReady 事件之前完成 JS 的执行，而 async 的 JS 执行取决于 JS 是否下载完成。async 适用于不操作 dom 的 js 文件，一般使用比较少。
+10.状态码含义
+200-299 请求成功。
+301-399重定向
+400-499 请求错误
+500- 服务器错误
+400 Bad Request 客户端请求的语法错误，服务器无法理解
+404 Not Found 
+405 Method Not Allowed 
+500 Internal Server Error
+503 - 服务不可用
+10.304重用数据
+11.使用chrome浏览器查看是否内存泄漏。
+什么是内存泄漏
+ javaScript会在创建变量时分配内存并且在不使用变量时会自动的释放内存，这个释放内存的过程称为为垃圾回收，程序运行需要内存，只要程序提出要求运行环境就必须提供内存，要对于持续运行的服务进行必须及时释放，否则内存占用越来越高，进一步导致系统的性能降低，有时会导致进程崩溃。
+内存泄漏的识别
+如果连续几次垃圾回收之后内存占用一次比一次大，证明就有内存泄漏 需要实时查看内存的占比情况。
+怎么在chrome浏览器中查看内存占用情况
+观察chrome浏览器，打开开发者模式，选择Memory
+在顶部勾选Memory
+点击坐上角的record
+在页面上进行各种操作，模拟用户的使用情况
+一段时间后，点击对话框的stop按钮，面板上就会显示这段时间的内存占用情况
+12.跨域解决方案
+原理文档
+实践文档
+
+目前跨域使用CORS比较多，如果不需要携带cookie,则只需要在服务端设置Access-control-Allow-Origin即可;
+关于框架配置的代理proxy
+以上所有配置都是有着共同的底层包 http-proxy-middleware .里面需要用到的各种 websocket ，rewrite 等功能，直接看这个库的配置就可以了。关于 http-proxy-middleware 这个库的原理可以看我这篇文章
+CORS(CROSS-Origin Resource Sharing 跨域资源共享)
+
+服务器端：设置响应头信息：Access-Control-Allow-Origin：*；
+同源政策默认阻止跨域获取资源，但是CORS给了web服务器权限，即服务器可以选择，允许访问他们的资源 
+设置三个响应头 ；
+1.Access-Control-Allow-Origin 字段  （指定了哪些域名或ip地址可以跨域 也可以写* 代表允许所有地址）
+res.setHeater('Access-Control-Allow-Origin',' http://XXX.cn || * ||  ip地址  ')
+2.CORS默认支持9个请求头，如果在9个请求头之外 要单独设置，多个请求头之间要用英文逗号隔开。
+res.setHeater('Access-Control-Allow-Headers','Content-Type,X-Custom-Header'); 
+3.默认情况下CORS仅支持客户端发起的GET、POST、HEAD请求，如果希望客户端发送PUT、DELETE请求需要在服务器端设置。res.setHeater('Access-Control-Allow-Method','GET'); 
+JSONP封装
+JavaScript
+复制代码
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+// 客户端
+// 1.封装一个jsonp函数;
+jsonp({
+    // method: 'GET',// 所有的jsonp请求都是get请求，所以这个属性可以不写了
+    // data: , // 写了以后太繁琐，取消
+    url: 'http://www.localhost:3006/api/jsonp',
+    success: function (res) {
+        console.log(res)
+    }
+})
+ 
+// 封装
+function jsonp(obj) {
+    // 1.创建一个script标签;   2.改变src    3.给函数起名字，定义为全局函数；
+    var script = document.createElement("script"); // 不要用innerHTML, 他不会自动发送请求
+    // 3.给函数起名字，定义为全局函数；
+    var fnName = "haha_123123";
+    // window.aaa就是把aaa设置为全局变量！
+    window[fnName] = obj.success;
+    // 2.改变src,添加到head中
+    script.src = obj.url + "?callback=" + fnName;
+    // 把script标签添加到head标签中，就会发送src的请求了
+    document.head.appendChild(script);
+    // 代码执行完毕，把script标签删除
+    script.onload = function () {
+        document.head.removeChild(script);
+        window[fnName] = undefined;
+    }
+}
+
+//服务端
+app.get("/api/jsonp", (req, res) => {
+    // 获取函数名,设置对象,发送给客户端
+    const fnName = req.query.callback;
+    // 定义发送给客户端的对象转换为json字符串
+    var objStr = JSON.stringify({
+        name: '张三',
+        age: 18
+    });
+    // 字符串类型的执行函数
+    res.send(`${fnName}(${objStr})`);
+});
+
