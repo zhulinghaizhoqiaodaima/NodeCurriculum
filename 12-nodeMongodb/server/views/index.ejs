@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>
+    <%= title %>
+  </title>
+  <link rel='stylesheet' href='/stylesheets/style.css' />
+</head>
+<style>
+
+</style>
+
+<body>
+  <h1>mongodb的CRUD</h1>
+  <!-- <form method="get" action="/login/api">
+      <div>用户名:<input id="username" name="username"></div>
+      <div>密码:<input type="password" id="password" name="password"></div>
+      <div>年龄:<input type="number" id="age"  name="age"></div>
+      <div><button type="submit" id="register">注册</button></div>
+    </form> -->
+  <div>
+    <div>用户名:<input id="username" name="username"></div>
+    <div>密码:<input type="password" id="password" name="password"></div>
+    <div>年龄:<input type="number" id="age" name="age"></div>
+    <div><button id="register">注册</button></div>
+
+    <!-- <div>
+      <button id="update">更新</button>
+      <button id="delete">删除</button>
+    </div> -->
+    <hr>
+    <table border="1">
+      <thead>
+        <tr>
+          <td>id</td>
+          <td>用户名</td>
+          <td>年龄</td>
+        </tr>
+      <tbody>
+      </tbody>
+      </thead>
+    </table>
+  </div>
+  <script>
+    const ousername = document.querySelector('#username')
+    const opassword = document.querySelector('#password')
+    const oage = document.querySelector('#age')
+    const oregister = document.querySelector('#register')
+    const oupdate = document.querySelector('#update')
+    const odelete = document.querySelector('#delete')
+    oregister.onclick = () => {
+      console.log(ousername.value, opassword.value, oage.value);
+      fetch('api/user/add', {
+        method: 'POST',
+        headers: {
+          "Content-Type": 'application/json'
+        },
+        body: JSON.stringify({
+          username: ousername.value,
+          password: opassword.value,
+          age: oage.value
+        })
+      }).then(res => res.json()).then(res => {
+        console.log(res);
+      })
+    }
+
+    const updateOne = (id, data) => {
+      console.log(id,data);
+      fetch(`api/user/update/${id}`, {
+        method: 'POST',
+        headers: {
+          "Content-Type": 'application/json'
+        },
+        body:JSON.stringify(data)
+      }).then(res => res.json()).then(res => {
+        console.log(res);
+      }).catch(err=>{
+        console.log(err);
+      })
+    }
+    const deleteOne = (id) => {
+      fetch(`api/user/delete/${id}`).then(res => res.json()).then(res => {
+        console.log(res);
+      })
+    }
+    let tbody = document.querySelector('tbody')
+    tbody.onclick = function (evs) {
+      let evt = window.event || evs;
+      let tar = evt.target || evt.querySelector;
+      console.log(tar.id);
+      if (tar.innerHTML == '修改') {
+        // 弹出一个文本输入框，将输入的值，添加到ul列表中
+        alert('在上部输入框内输入内容')
+        if (ousername.value && opassword.value && oage.value) {
+          // console.log(ousername.value, opassword.value, oage.value);
+          let data = {
+            username: ousername.value,
+            password: opassword.value,
+            age: oage.value*1
+          }
+          console.log(tar.id);
+          updateOne(tar.id, data)
+          tar.parentNode.innerHTML = `
+          <tr>
+                <td>${tar.id}</td>  
+                <td>${ousername.value}</td>  
+                <td>${opassword.value}</td>
+                <td>修改</td>
+                <td>删除</td>
+              </tr>
+          `
+        } else {
+          alert('修改数据不为空')
+        }
+
+      } else if (tar.innerHTML == '删除') {
+        // 删除整行li
+        tar.parentNode.remove();
+        deleteOne(tar.id)
+      }
+    }
+
+
+    fetch('api/user/list?page=1&limit=2').then(res => res.json()).then(res => {
+      console.log(res);
+      tbody.innerHTML = res.map(item => `
+              <tr>
+                <td>${item._id}</td>  
+                <td>${item.username}</td>  
+                <td>${item.age}</td>
+                <td id="${item._id}">修改</td>
+                <td id="${item._id}">删除</td>
+              </tr>
+            `).join('');
+    })
+  </script>
+
+</body>
+
+</html>
