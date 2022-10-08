@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        span{
+            display: inline-block;
+            min-width: 60px;
+            margin-right: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>文件上传界面</h1>
+    <form action="/user/upload" method="POST" enctype="multipart/form-data ">
+        <div>
+            <span>用户名: </span> <input type="text" name="username">
+        </div>
+        <div>
+            <span>密码: </span> <input type="password" name="password">
+        </div>
+        <div>
+            <span>年龄: </span> <input type="number" name="age">
+        </div>
+        <div>
+            <span>头像: </span> <input type="file" name="avatar">
+        </div>
+        <div>
+            <button type="submit">提交</button>
+        </div>
+    </form>
+</body>
+</html>

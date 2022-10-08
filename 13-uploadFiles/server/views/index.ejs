@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <link rel='stylesheet' href='/stylesheets/style.css' />
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script>
+    // Add a request interceptor
+    axios.interceptors.request.use(function (config) {
+      const token = localStorage.getItem('token')
+      config.headers.Authorization = `Bearer ${token}`
+      return config;
+    }, function (error) {
+      // Do something with request error
+      return Promise.reject(error);
+    });
+
+    // Add a response interceptor
+    axios.interceptors.response.use(function (response) {
+      const { authorization } = response.headers;
+      authorization && localStorage.setItem('token', authorization)
+      return response;
+
+    }, function (error) {
+      console.log(error.response.status);
+      if (error.response.status === 401) {
+        localStorage.removeItem('token')
+        location.href = '/login'
+      }
+      return Promise.reject(error);
+    });
+  </script>
+</head>
+<style>
+  .img {
+    width: 80px;
+    height: auto;
+  }
+  span{
+            display: inline-block;
+            min-width: 60px;
+            margin-right: 10px;
+            text-align: center;
+        }
+</style>
+
+<body>
+  <h1>后台系统-用户管理
+
+    <button id="exit">退出登录</button>
+  </h1>
+  <div style="float: left; margin-right: 50px;">
+    <div>
+      <span>用户名: </span> <input type="text" id="username" name="username">
+    </div>
+    <div>
+      <span>密码: </span> <input type="password"  id="password" name="password">
+    </div>
+    <div>
+      <span>年龄: </span> <input type="number" id="age" name="age">
+    </div>
+    <div>
+      <span>头像: </span> <input type="file" id="file" name="avatar">
+    </div>
+    <div><button id="register">添加用户</button></div>
+  </div>
+  <div>
+    <span style="text-align: center; font-weight: bolder;">修改区域</span>
+    <div>用户名:<input id="usernameupdate"></div>
+    <div>年龄:<input type="number" id="ageupdate"></div>
+  </div>
+
+  <div style="margin-top: 90px;"></div>
+  <hr>
+  <span style="text-align: center; font-weight: bolder;">用户列表</span>
+  <table border="1">
+    <thead>
+      <tr>
+        <td>id</td>
+        <td>用户名</td>
+        <td>年龄</td>
+        <td>头像</td>
+        <td>修改</td>
+        <td>删除</td>
+      </tr>
+    </thead>
+    <tbody>
+    </tbody>
+
+  </table>
+
+  <script>
+    const ousername = document.querySelector('#username')
+    const usernameupdate = document.querySelector('#usernameupdate')
+    const opassword = document.querySelector('#password')
+    const oage = document.querySelector('#age')
+    const ofile = document.querySelector('#file')
+    const ageupdate = document.querySelector('#ageupdate')
+    const oregister = document.querySelector('#register')
+    const oupdate = document.querySelector('#update')
+    const odelete = document.querySelector('#delete')
+    const logout = document.querySelector('#exit')
+
+    logout.onclick = () => {
+      localStorage.removeItem("token")
+      location.href = '/login'
+    }
+    oregister.onclick = () => {
+      console.log(ousername.value, opassword.value, oage.value,ofile.files);
+      const formsdata = new FormData()
+      formsdata.append('username',ousername.value)
+      formsdata.append('password',opassword.value)
+      formsdata.append('age',oage.value)
+      formsdata.append('avatar',ofile.files[0])
+      axios.post('api/user/add',formsdata,{
+        headers:{
+          'Content-Type':'multipart/form-data',
+        }
+      })
+      // axios.post('api/user/add', {
+      //   username: ousername.value,
+      //   password: opassword.value,
+      //   age: oage.value
+      // }).then(res => {
+      //   console.log(res);
+      //   if (res.data.ok === 0) {
+      //     location.href = '/login'
+      //   }
+      // })
+
+    }
+
+    const updateOne = (id, data) => {
+      console.log(id, data);
+      axios.put(`api/user/update/${id}`, data).then(res => {
+        console.log(res);
+        if (res.data.ok === 0) {
+          location.href = '/login'
+        }
+      }).catch(err => {
+        console.log(err);
+      })
+    }
+    const deleteOne = (id) => {
+      axios.delete(`api/user/delete/${id}`).then(res => {
+        console.log(res);
+        if (res.data.ok === 0) {
+          location.href = '/login'
+        }
+      })
+    }
+
+    let tbody = document.querySelector('tbody')
+    tbody.onclick = function (evs) {
+      let evt = window.event || evs;
+      let tar = evt.target || evt.querySelector;
+      if (tar.innerHTML == '修改') {
+        if (usernameupdate.value && ageupdate.value) {
+          // console.log(ousername.value, opassword.value, oage.value);
+          let data = {
+            username: usernameupdate.value,
+            age: ageupdate.value * 1
+          }
+          console.log(tar.id);
+          updateOne(tar.id, data)
+          tar.parentNode.innerHTML = `
+          <tr>
+                <td>${tar.id}</td>  
+                <td>${usernameupdate.value}</td>  
+                <td>${ageupdate.value}</td>
+                <td>修改</td>
+                <td>删除</td>
+          </tr>
+          `
+        } else {
+          const name = tar.parentNode.children[1].innerHTML;
+          const age = tar.parentNode.children[2].innerHTML
+          usernameupdate.value = name
+          ageupdate.value = age
+          alert('在修改区域进行修改')
+        }
+
+      } else if (tar.innerHTML == '删除') {
+        // 删除整行li
+        tar.parentNode.remove();
+        deleteOne(tar.id)
+      }
+    }
+    axios.get('api/user/list?page=1&limit=20').then(res => {
+      console.log(res.data);
+      tbody.innerHTML = res.data.map(item => `
+              <tr>
+                <td>${item._id}</td>  
+                <td>${item.username}</td>  
+                <td>${item.age}</td>
+                <td><img class="img" src="${item.filepath}" alt="" /></td>
+                <td id="${item._id}" style="cursor: pointer;">修改</td>
+                <td id="${item._id}" style="cursor: pointer;">删除</td>
+              </tr>
+            `).join('');
+    })
+
+
+  </script>
+
+</body>
+
+</html>

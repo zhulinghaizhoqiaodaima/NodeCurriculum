@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <h1>聊天界面</h1>
+
+    <script>
+        const WebSocketType = {
+            Error: 0, // 出错走它
+            GroupList: 1, // 群聊
+            GroupChat: 2, // 群聊
+            SingleChat: 3, //私聊
+        }
+        const ws = new WebSocket(`ws://localhost:8080?token${localStorage.getItem('token')}`)
+        ws.onopen = () => {
+            console.log('success');
+        }
+
+        ws.onmessage = (msgObj) => {
+            console.log(msgObj.data);
+            const data = JSON.parse(msgObj.data)
+            switch(data.type) {
+                case WebSocketType.Error:
+                    localStorage.removeItem('token')
+                    location.href = '/login'
+                    break;
+                case WebSocketType.GroupChat:
+                    console.log(data);
+                    break;
+                default:
+                    break;
+            }
+        }
+        ws.onerror = (err) => {
+            console.log(`fail: ${err}`);
+        }
+    </script>
+</body>
+
+</html>
