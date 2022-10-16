@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script>
+    // Add a request interceptor
+    axios.interceptors.request.use(function (config) {
+      const token = localStorage.getItem('token')
+      config.headers.Authorization = `Bearer ${token}`
+      return config;
+    }, function (error) {
+      // Do something with request error
+      return Promise.reject(error);
+    });
+
+    // Add a response interceptor
+    axios.interceptors.response.use(function (response) {
+      const { authorization } = response.headers;
+      authorization && localStorage.setItem('token', authorization)
+      return response;
+
+    }, function (error) {
+      console.log(error.response.status);
+      if (error.response.status === 401) {
+        localStorage.removeItem('token')
+        location.href = '/login'
+      }
+      return Promise.reject(error);
+    });
+  </script>
+
+</head>
+
+<body>
+  <h1>聊天室</h1>
+  <input type="text" id="inputMsg"><button id="send">send</button>
+  <select name="" id="select">
+
+  </select>
+
+
+  <script>
+    let select = document.querySelector('#select')
+    let sendMsg = document.querySelector('#send')
+    let Msg = document.querySelector('#inputMsg')
+    const WebSocketType = {
+      Error: 0, // 出错走它
+      GroupList: 1, // 群组
+      GroupChat: 2, // 群聊
+      SingleChat: 3, //私聊
+    }
+    const ws = new WebSocket(`ws://localhost:8080?token${localStorage.getItem('token')}`)
+    ws.onopen = () => {
+      console.log('success');
+    }
+
+    ws.onmessage = (msgObj) => {
+      const data = JSON.parse(msgObj.data)
+      switch (data.type) {
+
+        case WebSocketType.GroupList:
+          select.innerHTML = `<option value="all">all</option>` + data.data.map(item => `
+            <option value="${item.data.username}">${item.data.username}</option>
+          `).join('')
+          console.log(data);
+          break;
+        case WebSocketType.GroupChat:
+          console.log(data);
+          if (!data.user) {
+            console.log(data.data);
+          } else {
+            console.log(`${data.user.data.username}:说${data.data}`);
+          }
+          break;
+        case WebSocketType.SingleChat:
+        console.log(data);
+        if (!data.user) {
+          console.log(data.data);
+        } else {
+          console.log(`${data.user.data.username}:说${data.data}`);
+        }
+        break;
+
+        case WebSocketType.Error:
+          localStorage.removeItem('token')
+          location.href = '/login'
+          break;
+        default:
+          break;
+      }
+    }
+    ws.onerror = (err) => {
+      console.log(`fail: ${err}`);
+    }
+    sendMsg.onclick = () => {
+      // console.log(Msg.value);
+      if (select.value === 'all') {
+        ws.send(createMessage(
+          WebSocketType.GroupChat,
+          Msg.value
+        ))
+      } else {
+        ws.send(createMessage(
+          WebSocketType.SingleChat,
+          Msg.value,
+          select.value,
+        ))
+      }
+    }
+
+    function createMessage(type, data, to) {
+      return JSON.stringify({
+        type,
+        data,
+        to
+      })
+    }
+
+  </script>
+</body>
+
+</html>
