@@ -7,37 +7,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <script>
-    // Add a request interceptor
-    axios.interceptors.request.use(function (config) {
-      const token = localStorage.getItem('token')
-      config.headers.Authorization = `Bearer ${token}`
-      return config;
-    }, function (error) {
-      // Do something with request error
-      return Promise.reject(error);
-    });
-
-    // Add a response interceptor
-    axios.interceptors.response.use(function (response) {
-      const { authorization } = response.headers;
-      authorization && localStorage.setItem('token', authorization)
-      return response;
-
-    }, function (error) {
-      console.log(error.response.status);
-      if (error.response.status === 401) {
-        localStorage.removeItem('token')
-        location.href = '/login'
-      }
-      return Promise.reject(error);
-    });
-  </script>
-
+  <script src="/javascripts/socket.io.js"></script>
 </head>
 
 <body>
   <h1>聊天室</h1>
+  <h2>当前用户：
+    <b id="user"></b>
+  </h2>
   <input type="text" id="inputMsg"><button id="send">send</button>
   <select name="" id="select">
 
@@ -45,80 +22,66 @@
 
 
   <script>
-    let select = document.querySelector('#select')
-    let sendMsg = document.querySelector('#send')
-    let Msg = document.querySelector('#inputMsg')
     const WebSocketType = {
       Error: 0, // 出错走它
-      GroupList: 1, // 群组
+      GroupList: 1, // 群聊
       GroupChat: 2, // 群聊
       SingleChat: 3, //私聊
     }
-    const ws = new WebSocket(`ws://localhost:8080?token${localStorage.getItem('token')}`)
-    ws.onopen = () => {
-      console.log('success');
-    }
+    let select = document.querySelector('#select')
+    let sendMsg = document.querySelector('#send')
+    let Msg = document.querySelector('#inputMsg')
+    let userName = document.querySelector('#user')
+    userName.innerHTML = localStorage.getItem('username')
 
-    ws.onmessage = (msgObj) => {
-      const data = JSON.parse(msgObj.data)
-      switch (data.type) {
+    const socket = io(`ws://localhost:3000?token=${localStorage.getItem('token')}`);
 
-        case WebSocketType.GroupList:
-          select.innerHTML = `<option value="all">all</option>` + data.data.map(item => `
-            <option value="${item.data.username}">${item.data.username}</option>
+
+    socket.on("receive", (args) => {
+      const { info } = args;
+      console.log(info);
+    });
+    socket.on(WebSocketType.Error, (msg) => {
+      console.log(msg);
+      localStorage.removeItem('token')
+      location.href = 'login'
+    })
+    //群组列表
+    socket.on(WebSocketType.GroupList, (data) => {
+      console.log('执行群组列表更新', data);
+      const { info } = data;
+      select.innerHTML = `<option value="all">all</option>` + info.map(item => `
+            <option value="${item.username}">${item.username}</option>
           `).join('')
-          console.log(data);
-          break;
-        case WebSocketType.GroupChat:
-          console.log(data);
-          if (!data.user) {
-            console.log(data.data);
-          } else {
-            console.log(`${data.user.data.username}:说${data.data}`);
-          }
-          break;
-        case WebSocketType.SingleChat:
-        console.log(data);
-        if (!data.user) {
-          console.log(data.data);
-        } else {
-          console.log(`${data.user.data.username}:说${data.data}`);
-        }
-        break;
+    });
 
-        case WebSocketType.Error:
-          localStorage.removeItem('token')
-          location.href = '/login'
-          break;
-        default:
-          break;
-      }
-    }
-    ws.onerror = (err) => {
-      console.log(`fail: ${err}`);
-    }
+    //群聊
+    socket.on(WebSocketType.GroupChat, (data) => {
+      // console.log(data);
+      console.log(`${data.user.username}:说${data.info}`);
+
+    });
+    //私聊
+    socket.on(WebSocketType.SingleChat, (data) => {
+      console.log(userName.value);
+      console.log(data);
+      console.log(`${data.user.username}:对${userName.innerHTML}说${data.info}`);
+    });
+
     sendMsg.onclick = () => {
       // console.log(Msg.value);
       if (select.value === 'all') {
-        ws.send(createMessage(
-          WebSocketType.GroupChat,
-          Msg.value
-        ))
+        socket.emit(WebSocketType.GroupChat, createMessage(Msg.value, select.value));
       } else {
-        ws.send(createMessage(
-          WebSocketType.SingleChat,
-          Msg.value,
-          select.value,
-        ))
+        socket.emit(WebSocketType.SingleChat, createMessage(Msg.value, select.value));
       }
     }
 
-    function createMessage(type, data, to) {
-      return JSON.stringify({
-        type,
+    function createMessage(data, to) {
+      return {
         data,
         to
-      })
+      }
     }
 
   </script>
