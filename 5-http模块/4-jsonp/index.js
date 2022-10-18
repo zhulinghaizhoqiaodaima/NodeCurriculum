@@ -3,9 +3,6 @@ import { URL } from 'url'
 
 http.createServer((req,res)=>{
     let urlObj = new URL(req.url,'http://localhost:5000')
-    // for (const [key,value] of urlObj.searchParams) {
-        
-    // }
     switch(urlObj.pathname) {
         case '/api/aaa':
             res.end(`${urlObj.searchParams.get('callback')} (${
@@ -13,7 +10,7 @@ http.createServer((req,res)=>{
                     name:'zhulinhai',
                     age:100,
                 })
-            })`)
+            })`) //后端返回
             break;
         default:
             res.end('404')

@@ -10,15 +10,9 @@ http.createServer((req,res)=>{
     })
     switch(urlObj.pathname) {
         case '/api/aaa':
-            httpget((data)=>{
+            httpget((data)=>{ // 作为中台系统向更后端发起请求
                 res.end(data)
             })
-            // res.end(`${
-            //     JSON.stringify({
-            //         name:'zhulinhai',
-            //         age:100,
-            //     })
-            // }`)
             break;
         default:
             res.end('404')

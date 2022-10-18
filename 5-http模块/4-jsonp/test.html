@@ -18,7 +18,10 @@
 
         function test(obj) {
             console.log(obj);
-            divdom.innerHTML = obj.name
+            divdom.innerHTML = `
+                名字： ${obj.name}
+                年龄： ${obj.age}
+            `
         }
     </script>
 </body>

@@ -13,12 +13,6 @@ http.createServer((req, res) => {
             httpPost((data) => {
                 res.end(data)
             })
-            // res.end(`${
-            //     JSON.stringify({
-            //         name:'zhulinhai',
-            //         age:100,
-            //     })
-            // }`)
             break;
         default:
             res.end('404')
@@ -46,16 +40,15 @@ function httpPost(cb) {
         }
 
     }
-    let req = https.request(options, (res) => {
+    const response = https.request(options, (res) => {
         res.on('data', (chunk) => { //监听数据分段返回
             data += chunk;
         })
         res.on('end', () => {  //所有的数据都合并到一起
-            // console.log(data);
             cb(data)
         })
     })
-    req.write(JSON.stringify(payload))
-    req.end()
-  
+    response.write(JSON.stringify(payload))
+    response.end()
+
 }

@@ -1,8 +1,7 @@
 import http from 'http'
 import https from 'https'
 import { URL } from 'url'
-import cheerio from 'cheerio'
-
+import {load} from 'cheerio'
 
 http.createServer((req,res)=>{
     let urlObj = new URL(req.url,'http://localhost:5000')
@@ -15,12 +14,6 @@ http.createServer((req,res)=>{
             httpget((data)=>{
                 res.end(spider(data))
             })
-            // res.end(`${
-            //     JSON.stringify({
-            //         name:'zhulinhai',
-            //         age:100,
-            //     })
-            // }`)
             break;
         default:
             res.end('404')
@@ -42,7 +35,7 @@ function httpget(cb) {
 }
 
 function spider(data) {
-    let $ = cheerio.load(data) // 被弃用
+    let $ = load(data) 
     let $moviewlist = $('contains')
     let movies= []
     $moviewlist.each((index,value)=>{

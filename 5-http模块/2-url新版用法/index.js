@@ -1,24 +1,24 @@
 import http from 'http'
-import {URL} from 'url'
+import { URL } from 'url'
 //创建服务器
-http.createServer((req,res)=>{
+http.createServer((req, res) => {
     //接收浏览器传的参数，返回渲染的内容
-    if(req.url =='/favicon.ico') return;
+    if (req.url == '/favicon.ico') return;
     // let urlObj = url.parse(req.url,true)
     // console.log(urlObj.query);
-    const urlObj = new URL(req.url,'http://localhost:5000')
+    const urlObj = new URL(req.url, 'http://localhost:5000')
     console.log(urlObj.searchParams);
-    res.writeHead(renderState(urlObj.pathname),{'Content-Type':'text/html'})
+    res.writeHead(renderState(urlObj.pathname), { 'Content-Type': 'text/html' })
     res.write(renderHtml(urlObj.pathname))
     res.end()
-}).listen(5000,()=>{
+}).listen(5000, () => {
     console.log('server start');
 })
 
 function renderHtml(url) {
     console.log(url);
     let content = '';
-    switch(url) {
+    switch (url) {
         case '/home':
             content = '欢迎来到首页'
             break;
@@ -48,6 +48,6 @@ function renderHtml(url) {
 }
 
 function renderState(url) {
-    let arr = ['/home','/list']
-    return arr.indexOf(url) !== -1 ? 200:404
+    let arr = ['/home', '/list']
+    return arr.indexOf(url) !== -1 ? 200 : 404
 }

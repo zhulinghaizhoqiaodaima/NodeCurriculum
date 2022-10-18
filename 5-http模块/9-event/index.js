@@ -18,7 +18,7 @@ http.createServer((req,res)=>{
                 console.log(data);
             })
             httpget((data)=>{
-                res.end(data)
+                res.end(data) //返回数据
                 event.emit('play','触发成功')
             })
             break;
@@ -31,7 +31,7 @@ http.createServer((req,res)=>{
 function httpget(cb) {
     let data = '';
     https.get(`https://i.maoyan.com/api/mmdb/movie/v3/list/hot.json?ct=%E6%A1%82%E6%9E%97&ci=93&channelId=4`,(res)=>{
-        res.on('data',(chunk)=>{ //监听数据分段返回
+        res.on('data',(chunk)=>{ //监听数据分段返回,分段数据流
             data+= chunk;
         })
         res.on('end',()=>{  //所有的数据都合并到一起
